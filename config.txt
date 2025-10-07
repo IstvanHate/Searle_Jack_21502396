@@ -8,3 +8,7 @@ StudentID: 21502396
 learning_rate: 0.001
 batch_size: 200
 num_epochs: 60
+
+# task1 parameters
+threshold : 0.5
+model_path : data/task1YOLO.pt
