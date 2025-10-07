@@ -9,4 +9,4 @@
 model_training/training_data/*
 
 #ignore all .png files in the output folder
-output/*.png
+output/task?/*

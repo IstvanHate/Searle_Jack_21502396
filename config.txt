@@ -11,4 +11,5 @@ num_epochs: 60
 
 # task1 parameters
 threshold : 0.5
-model_path : data/task1YOLO.pt
+model_path_tsk1 : data/task1YOLO.pt
+model_path_tsk2 : data/task2YOLO.pt
