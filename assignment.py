@@ -12,10 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-# Author: [Your Name]
-# Last Modified: 2024-09-09
-
 import sys
 import os
 
