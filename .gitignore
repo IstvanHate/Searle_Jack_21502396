@@ -4,3 +4,6 @@
 *.ptx
 *.cubin
 *.fatbin
+
+# ignore everything in the training_data folder
+model_training/training_data/*
