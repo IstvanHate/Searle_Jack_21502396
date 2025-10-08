@@ -17,6 +17,10 @@ Inside this folder, you must have the following structure:
     
 - packages/ : Folder containing any Python packages that are not installable via pip (optional).
 - data/ : Folder containing any pre-trained weights/checkpoints required for your models (if any).
+- input/ : folder containing example input data from blackboard
+- output/ : folder containing task1-4 outputs
+- model_training/ : contains scripts for taining models + other model related data. Training data place in this folder WONT be tracked due to .gitignore
+
 
 Files:
 ------
@@ -28,11 +32,8 @@ Files:
   `python assignment.py task2 /path/to/images/for/task2`
 
 - task1.py, task2.py, task3.py, task4.py : Complete these files to implement the functionality for each task. Each task should save the output to the designated output folder.
-
+- model_training/Train_CNN_tsk3.ipynb, my_model_defs.py : for training small CNN model for task 3
+Train_YOLO_Colab.ipynb : YOLO training script adapted from the Author, whomst I've left his credits in. Mounts google drive and connects to servers, able to completely run online. 
+- Train_YOLO_locally.ipynb : jupyter notebook for training YOLO model locally using data on a G Drive, for training models on Curtin pcs
 - requirements.txt : List of acceptable Python libraries for your project.
-
-What to Modify:
----------------
-1. Implement the methods in task1.py, task2.py, task3.py, and task4.py. 
-2. Ensure your output is written to the correct subfolders under the output/ directory.
-3. **Do not modify assignment.py**. It is already configured to handle the tasks and pass arguments correctly.
+- environment.yml : export of venv installed packages, used for recreating venv with same installs
