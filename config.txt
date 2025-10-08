@@ -4,7 +4,7 @@ Surname: Searle
 GivenNames: Jack
 StudentID: 21502396
 
-# Hyperparameters
+# Hyperparameters (not in use atm)
 learning_rate: 0.001
 batch_size: 200
 num_epochs: 60
