@@ -34,6 +34,7 @@ from torch.utils.data import DataLoader
 from my_model_defs import DigitCNN
 
 VALID_EXTS = {'.jpg', '.jpeg', '.png', '.bmp', '.JPG', '.JPEG', '.PNG', '.BMP'}
+CHAR_DICT = {0 : '0', 1 : '1', 2 : '2', 3 : '3', 4 : '4', 5 : '5', 6 : '6', 7 : '7', 8 : '8', 9 : '9' , 10 : 'A', 11 : 'B', 12 : 'C'}
 
 def save_output(output_path, content, output_type='txt'):
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
@@ -159,22 +160,23 @@ def run_task3(image_path, config):
         sys.exit(1)
 
     for img in images:
-        # note img is file path string
 
+        # Run inference
         detection = run_inference(model, img, threshold=config.get('threshold', 0.5))
         if detection is None:
             print(f"[WARNING] No detections above threshold for {img}")
             continue
         else:
-            content = str(detection[0].item())  # convert tensor to int and then to string
+
+            #save detection output as str
+            content = CHAR_DICT[detection]
             print(f"[INFO] Detected digit: {content} in {img}")
-            # create output directory based on bnX where X is the number in the filename of img
-            X = os.path.basename(img)[2]  # gets the number after 'bn'
-            output_dir = f'output/task3/bn{X}'
-            # create output directory if it doesn't exist
+
+            X = os.path.basename(img)[1] #assumes input image is in format cX_*.jpg
+            Y = image_path.split('/')[-1][-1] #assumes input path is in format .../bnY
+            output_dir = f'output/task3/bn{Y}'
             os.makedirs(output_dir, exist_ok=True)
 
-            # save each classified image as cx.txt in the output directory
             img_base = f'c{X}.txt'
             output_path = os.path.join(output_dir, img_base)
             save_output(output_path, content, output_type='txt')

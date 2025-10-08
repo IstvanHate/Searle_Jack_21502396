@@ -91,10 +91,12 @@ def run_task2(image_path, config):
         if detections is None:
             print(f"[WARNING] No detections above threshold for {img}")
             continue
+        # sort detections by x coord (left to right)
+        sorted_detections = sorted(detections, key=lambda d: d['bbox'][0])
 
         # crop image by taking slice of array for each detection
         #remember detection['bbox'][x] is (x1, y1, x2, y2)
-        cropped_list = [frame[det['bbox'][1]:det['bbox'][3], det['bbox'][0]:det['bbox'][2]] for det in detections]
+        cropped_list = [frame[det['bbox'][1]:det['bbox'][3], det['bbox'][0]:det['bbox'][2]] for det in sorted_detections]
 
         for i, cropped in enumerate(cropped_list):
             # create output directory based on bnX where X is the number in the filename of img
