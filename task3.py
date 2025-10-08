@@ -30,12 +30,13 @@ import torch.optim as optim
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 
-VALID_EXTS = {'.jpg', '.jpeg', '.png', '.bmp', '.JPG', '.JPEG', '.PNG', '.BMP'}
+# my model definitions
+from my_model_defs import DigitCNN
 
+VALID_EXTS = {'.jpg', '.jpeg', '.png', '.bmp', '.JPG', '.JPEG', '.PNG', '.BMP'}
 
 def save_output(output_path, content, output_type='txt'):
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
-
     if output_type == 'txt':
         with open(output_path, 'w') as f:
             f.write(content)
@@ -46,6 +47,25 @@ def save_output(output_path, content, output_type='txt'):
         print(f"Image saved at: {output_path}")
     else:
         print("Unsupported output type. Use 'txt' or 'image'.")
+
+def load_model(model_path, device_str='cuda'):
+    """
+    fml
+    Assumes the model's class (DigitCNN) is already imported.
+    """
+    if not os.path.exists(model_path):
+        print(f"[ERROR] Model file {model_path} not found.")
+        return None
+
+    device = torch.device(device_str if torch.cuda.is_available() else 'cpu')
+
+    # Load full model object
+    model = torch.load(model_path, weights_only=False, map_location=device)
+    model.eval()
+    model.to(device)
+
+    print(f"[INFO] Model loaded successfully from {model_path}")
+    return model
 
 
 def get_image_list(image_path):
@@ -82,18 +102,17 @@ def run_inference(model, img, threshold):
     # Preprocessing
     # read image as grayscale (to match training with single channel)
     frame = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
-
-    # check it read path correctly
     if frame is None:
         print(f"[WARNING] Could not read {img}, skipping.")
         return None
 
-    # Normalize the image to have mean 0.5 and standard deviation 0.5 for the single channel
-    transform = transforms.Compose([
-        transforms.ToTensor(),                # converts [H, W] into [1, H, W], float 0–1
-        transforms.Normalize((0.5,), (0.5,))  # mean & std for single channel
-    ])
+    # Resize to training dimension
+    frame = cv2.resize(frame, (28, 28))
 
+    transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.5,), (0.5,))
+    ])
     # Add batch dimension (unsqueeze)
     frame_tensor = transform(frame).unsqueeze(0)  # add batch dim → [1, 1, H, W]
 
@@ -102,7 +121,6 @@ def run_inference(model, img, threshold):
     frame_tensor = frame_tensor.to(device)
 
     # --- Inference ---
-    model.eval()
     with torch.no_grad():
         outputs = model(frame_tensor)  # shape [1, num_classes]
         probs = torch.softmax(outputs, dim=1)  # convert logits -> probabilities
@@ -113,7 +131,7 @@ def run_inference(model, img, threshold):
     # --- Confidence check ---
 
     #just in case they supply an invalid test iamge for task 3 to throw you off
-    if confidence < threshold:
+    if confidence < float(threshold):
         print(f"[INFO] No detections above threshold {threshold:.2f} (best was {confidence:.2f})")
         return None
 
@@ -126,12 +144,14 @@ def run_task3(image_path, config):
     Classifies digit cropped from task 2 using a simple CNN model
     """
     print(f"[INFO] Running Task 3 on: {image_path}")
-    model_path = config.get('model_path_tsk2', 'data/digit_classifier.pth')
+    model_path = config.get('model_path_tsk3', 'data/digit_classifier.pth')
 
-    model = DigitClassifier()  # instantiate your architecture
-    model.load_state_dict(torch.load("digit_classifier.pt"))
-    model.eval()
-    model.to(torch.device('cuda')) #switch to CPU if you aint got a nividia gpu
+    model = load_model(model_path, device_str='cuda')
+    if model is None:
+        print(f"[ERROR] Could not load model from {model_path}")
+        sys.exit(1)
+
+    # Get list of images
     images = get_image_list(image_path)
 
     if not images: #to this day idk if this or images = None is the best way

@@ -21,6 +21,8 @@ from task2 import run_task2
 from task3 import run_task3
 from task4 import run_task4
 
+import torch
+
 # Function to read the config file
 def read_config(config_path):
     config = {}
