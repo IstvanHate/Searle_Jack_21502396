@@ -70,10 +70,10 @@ def run_inference(model, frame, threshold=0.5):
 
 def run_task2(image_path, config):
     """
-    Task 1: Object Detection and Cropping
-    Crops detected feature from image(s) and saves to outputs/task1/
+    Task 2: Object detection and cropping, number -> many digits
+    Crops detected feature from image(s) and saves to outputs/task2/bnX/cY.png
     """
-    print(f"[INFO] Running Task 1 on: {image_path}")
+    print(f"[INFO] Running Task 2 on: {image_path}")
     model_path = config.get('model_path_tsk2', 'data/task2YOLO.pt')
     model = YOLO(model_path)
 

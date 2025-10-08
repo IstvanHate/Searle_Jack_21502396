@@ -13,12 +13,15 @@
 # limitations under the License.
 
 # Author: 21502396
+# Disclaimer: AI used
+# This code was developed with the assistance of AI tools, including GitHub Copilot and ChatGPT.
+# GitHub Copilot commands used: /fix, /explain, /refactor
 
 import os
+from xml.parsers.expat import model
 import cv2
 import glob
 import sys
-from ultralytics import YOLO
 
 # torch extensions
 import torch
@@ -63,63 +66,98 @@ def get_image_list(image_path):
         print(f"[ERROR] Input path {image_path} does not exist.")
         sys.exit(1)
 
-def run_inference(model, frames, threshold=0.5):
-    """Run YOLO inference and return all detections above threshold."""
+def run_inference(model, img, threshold):
+    """
+    Run CNN inference on a single grayscale frame.
 
-    # for running inference
+    Params:
+        model      - Trained PyTorch classification model (expects grayscale).
+                     The model should output logits for classification, typically as a tensor of shape [batch_size, num_classes].
+        img        - Image file path (string)
+        threshold  - Minimum probability [0–1] to accept prediction
+
+    Returns:
+        predicted_class (int) if above threshold, otherwise None
+    """
+    # Preprocessing
+    # read image as grayscale (to match training with single channel)
+    frame = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
+
+    # check it read path correctly
+    if frame is None:
+        print(f"[WARNING] Could not read {img}, skipping.")
+        return None
+
+    # Normalize the image to have mean 0.5 and standard deviation 0.5 for the single channel
+    transform = transforms.Compose([
+        transforms.ToTensor(),                # converts [H, W] into [1, H, W], float 0–1
+        transforms.Normalize((0.5,), (0.5,))  # mean & std for single channel
+    ])
+
+    # Add batch dimension (unsqueeze)
+    frame_tensor = transform(frame).unsqueeze(0)  # add batch dim → [1, 1, H, W]
+
+    # Move to same device as the model
+    device = next(model.parameters()).device
+    frame_tensor = frame_tensor.to(device)
+
+    # --- Inference ---
     model.eval()
-    outputs = []
-
-    # run inference
     with torch.no_grad():
-        for frame in frames:
-            outputs = model(frame)
-            _, predicted = torch.max(outputs, 1)
+        outputs = model(frame_tensor)  # shape [1, num_classes]
+        probs = torch.softmax(outputs, dim=1)  # convert logits -> probabilities
+        confidence, predicted_idx = torch.max(probs, 1)  # take only best class
+        confidence = confidence.item()
+        predicted_class = predicted_idx.item()
 
-    if len(outputs) == 0:
-        print("[WARNING] No detections found.")
-        outputs = None
+    # --- Confidence check ---
 
-    return outputs
-def run_task2(image_path, config):
+    #just in case they supply an invalid test iamge for task 3 to throw you off
+    if confidence < threshold:
+        print(f"[INFO] No detections above threshold {threshold:.2f} (best was {confidence:.2f})")
+        return None
+
+    print(f"[DEBUG] Prediction: class {predicted_class}, confidence {confidence:.3f}")
+    return predicted_class
+
+def run_task3(image_path, config):
     """
-    Task 1: Object Detection and Cropping
-    Crops detected feature from image(s) and saves to outputs/task1/
+    Task 3: Digit classification
+    Classifies digit cropped from task 2 using a simple CNN model
     """
-    print(f"[INFO] Running Task 1 on: {image_path}")
-    model_path = config.get('model_path_tsk2', 'data/task2YOLO.pt')
-    model = YOLO(model_path)
+    print(f"[INFO] Running Task 3 on: {image_path}")
+    model_path = config.get('model_path_tsk2', 'data/digit_classifier.pth')
 
+    model = DigitClassifier()  # instantiate your architecture
+    model.load_state_dict(torch.load("digit_classifier.pt"))
+    model.eval()
+    model.to(torch.device('cuda')) #switch to CPU if you aint got a nividia gpu
     images = get_image_list(image_path)
+
+    if not images: #to this day idk if this or images = None is the best way
+        print(f"[ERROR] No valid images found in {image_path}")
+        sys.exit(1)
 
     for img in images:
         # note img is file path string
 
-        frame = cv2.imread(img)
-        if frame is None:
-            print(f"[WARNING] Could not read {img}, skipping.")
-            continue
-
-        detections = run_inference(model, frame, threshold=config.get('threshold', 0.5))
-        if detections is None:
+        detection = run_inference(model, img, threshold=config.get('threshold', 0.5))
+        if detection is None:
             print(f"[WARNING] No detections above threshold for {img}")
             continue
-
-        # crop image by taking slice of array for each detection
-        #remember detection['bbox'][x] is (x1, y1, x2, y2)
-        cropped_list = [frame[det['bbox'][1]:det['bbox'][3], det['bbox'][0]:det['bbox'][2]] for det in detections]
-
-        for i, cropped in enumerate(cropped_list):
+        else:
+            content = str(detection[0].item())  # convert tensor to int and then to string
+            print(f"[INFO] Detected digit: {content} in {img}")
             # create output directory based on bnX where X is the number in the filename of img
             X = os.path.basename(img)[2]  # gets the number after 'bn'
-            output_dir = f'output/task2/bn{X}'
+            output_dir = f'output/task3/bn{X}'
             # create output directory if it doesn't exist
             os.makedirs(output_dir, exist_ok=True)
 
-            # save each cropped image as cx.png in the output directory
-            img_base = f'c{i}.png'
+            # save each classified image as cx.txt in the output directory
+            img_base = f'c{X}.txt'
             output_path = os.path.join(output_dir, img_base)
-            save_image(output_path, cropped)
+            save_output(output_path, content, output_type='txt')
 
 if __name__ == "__main__":
     print("umm hello go run assignment.py")

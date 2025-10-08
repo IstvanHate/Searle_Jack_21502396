@@ -62,7 +62,7 @@ def run_inference(model, frame, threshold=0.5):
 def run_task1(image_path, config):
     """
     Task 1: Object Detection and Cropping
-    Crops detected feature from image(s) and saves to outputs/task1/
+    Crops detected feature from image(s) and saves to outputs/task1/bnX.png
     """
     print(f"[INFO] Running Task 1 on: {image_path}")
     model_path = config.get('model_path_tsk1', 'data/task1YOLO.pt')
