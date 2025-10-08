@@ -14,8 +14,7 @@
 
 # Author: 21502396
 # Disclaimer: AI used
-# This code was developed with the assistance of AI tools, including GitHub Copilot and ChatGPT.
-# GitHub Copilot commands used: /fix, /explain, /refactor
+# This code was developed with the assistance of AI tools (ChatGPT-5) for run_inference and load_model functions!
 
 import os
 from xml.parsers.expat import model
@@ -33,9 +32,13 @@ from torch.utils.data import DataLoader
 # my model definitions
 from my_model_defs import DigitCNN
 
+# could just import this from task 1 if I was smart
 VALID_EXTS = {'.jpg', '.jpeg', '.png', '.bmp', '.JPG', '.JPEG', '.PNG', '.BMP'}
+
+#dictionary for mapping class number to actual character
 CHAR_DICT = {0 : '0', 1 : '1', 2 : '2', 3 : '3', 4 : '4', 5 : '5', 6 : '6', 7 : '7', 8 : '8', 9 : '9' , 10 : 'A', 11 : 'B', 12 : 'C'}
 
+#save output to .txt file (adapted from code supplied from OCMP3007)
 def save_output(output_path, content, output_type='txt'):
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     if output_type == 'txt':
@@ -68,7 +71,7 @@ def load_model(model_path, device_str='cuda'):
     print(f"[INFO] Model loaded successfully from {model_path}")
     return model
 
-
+# get list of image file path(s)
 def get_image_list(image_path):
     """Return list of image file paths given a file or folder."""
     if os.path.isfile(image_path):
@@ -87,16 +90,16 @@ def get_image_list(image_path):
         print(f"[ERROR] Input path {image_path} does not exist.")
         sys.exit(1)
 
+# run inference with CNN classification model
+# struggled with this a shocking amount, is a lot harder to load up a saved model
+# then just switcingh over to eval for testing in my training script
 def run_inference(model, img, threshold):
     """
     Run CNN inference on a single grayscale frame.
-
     Params:
-        model      - Trained PyTorch classification model (expects grayscale).
-                     The model should output logits for classification, typically as a tensor of shape [batch_size, num_classes].
-        img        - Image file path (string)
-        threshold  - Minimum probability [0–1] to accept prediction
-
+        model: model object
+        img : image file path
+        threshold: min confidence to be valid digit
     Returns:
         predicted_class (int) if above threshold, otherwise None
     """
@@ -112,8 +115,8 @@ def run_inference(model, img, threshold):
 
     transform = transforms.Compose([
         transforms.ToTensor(),
-        transforms.Normalize((0.5,), (0.5,))
-    ])
+        transforms.Normalize((0.5,), (0.5,))])
+
     # Add batch dimension (unsqueeze)
     frame_tensor = transform(frame).unsqueeze(0)  # add batch dim → [1, 1, H, W]
 
@@ -130,7 +133,6 @@ def run_inference(model, img, threshold):
         predicted_class = predicted_idx.item()
 
     # --- Confidence check ---
-
     #just in case they supply an invalid test iamge for task 3 to throw you off
     if confidence < float(threshold):
         print(f"[INFO] No detections above threshold {threshold:.2f} (best was {confidence:.2f})")
